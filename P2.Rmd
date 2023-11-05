@@ -1,1 +1,131 @@
+---
+title: "Problem_2"
+author: "JJ"
+date: "2023-11-05"
+output:
+  pdf_document: default
+  word_document: default
+---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#install.packages("pwt10")
+library(pwt10)
+data("pwt10.01")
+
+#print variables
+names(pwt10.01)
+#relevant variables: 
+#rgdpe - Expenditure-side real GDP at chained PPPs (in million 2017 USD)
+#pop - population
+#emp - employment - for GDP per worker
+
+# Calculate Real GDP per capita
+pwt10.01$real_gdp_per_capita <- pwt10.01$rgdpe / pwt10.01$pop
+
+# Calculate Real GDP per worker
+pwt10.01$real_gdp_per_worker <- pwt10.01$rgdpe / pwt10.01$emp
+
+# Visualise the evolution of the real GDP per capita in the US
+
+levels(pwt10.01$country)
+US <- which(pwt10.01$country == "United States of America")
+
+plot(pwt10.01$year[US], pwt10.01$real_gdp_per_worker[US], xlab = "year", ylab = "Gross Domestic Product (United States of America)", type = "l", col="red", ylim=c(0,140000))
+lines(pwt10.01$year[US], pwt10.01$real_gdp_per_capita[US], type="l", col="green")
+
+#Add dummy for non-oil countries:
+non_oil_countries <- c(
+  "Bahrain", "Barbados", "Gabon", "Gambia", "Guinea",
+  "Iran", "Iraq", "Kuwait", "Lesotho", "Oman",
+  "Qatar", "Saudi Arabia", "Suriname", "Swaziland",
+  "United Arab Emirates", "Venezuela", "Yemen"
+)
+# Create the d_nonoil variable in the dataset
+pwt10.01$d_nonoil <- ifelse(pwt10.01$country %in% non_oil_countries, 0, 1)
+
+#### Dataset 1 ####
+
+# Initialize an empty vector to store y1960 values
+y1960 <- numeric()
+
+# Iterate through the row names to identify the relevant observations
+for (obs_name in rownames(pwt10.01)) {
+  # Check if the observation corresponds to the year 1960
+  if (grepl("-1960$", obs_name)) {
+    # Extract the rgdpe/pop value for the year 1960 and append it to y1960
+    y1960 <- c(y1960, pwt10.01[obs_name, "real_gdp_per_capita"])
+  }
+}
+# Now, y1960 contains the rgdpe/pop values for each country for the year 1960
+
+# Here, we used the 'grepl' function in R. It is used to search for a pattern in a character vector and returns a logical vector indicating whether a match was found in each element of the vector. It's commonly used for pattern matching or searching for specific substrings within character strings.
+# Here's the basic syntax of grepl:
+# grepl(pattern, x, ignore.case = FALSE, perl = FALSE, fixed = FALSE, useBytes = FALSE)
+# with 'pattern': The pattern or regular expression you want to search for.
+
+# Alternatively, it is possible to use:
+
+# Create a logical condition to filter rows for the year 1970
+is_year_1970 <- pwt10.01$year == 1970
+# Extract the Real GDP per capita values for the year 1970
+y1970 <- pwt10.01$real_gdp_per_capita[is_year_1970]
+
+# and repeat this for 1990, 2008 and 2019.
+
+is_year_1990 <- pwt10.01$year == 1990
+y1990 <- pwt10.01$real_gdp_per_capita[is_year_1990]
+
+is_year_2008 <- pwt10.01$year == 2008
+y2008 <- pwt10.01$real_gdp_per_capita[is_year_2008]
+
+is_year_2019 <- pwt10.01$year == 2019
+y2019 <- pwt10.01$real_gdp_per_capita[is_year_2019]
+
+countrycode <- pwt10.01$isocode[is_year_2019]
+d_nonoil <- pwt10.01$d_nonoil[is_year_2019]
+
+# Create a new data.frame "Convergence" with a cross-sectional structure
+
+Convergence <- data.frame(
+  countrycode = countrycode,
+  y1960 = y1960,
+  y1970 = y1970,
+  y1990 = y1990,
+  y2008 = y2008,
+  y2019 = y2019,
+  d_nonoil = d_nonoil
+)
+
+# Generate logs and average growth rates
+
+Convergence$log_y1960 <- log(Convergence$y1960)
+Convergence$log_y1970 <- log(Convergence$y1970)
+Convergence$log_y1990 <- log(Convergence$y1990)
+Convergence$log_y2008 <- log(Convergence$y2008)
+Convergence$log_y2019 <- log(Convergence$y2019)
+
+Convergence$growth_1970_2008 <- (Convergence$log_y2008 - Convergence$log_y1970)/38
+Convergence$growth_1970_2019 <- (Convergence$log_y2019 - Convergence$log_y1970)/49
+Convergence$growth_1990_2019 <- (Convergence$log_y2019 - Convergence$log_y1990)/29
+
+
+
+###########################################################################
+#Own code follows:
+###########################################################################
+
+#create scatter plot
+plot(
+  Convergence$log_y1970,  
+  Convergence$growth_1970_2019,  
+  xlab = "Log Real GDP per capita in 1970",
+  ylab = "Growth Rate (1970 to 2019)",
+  main = "Scatter Plot",
+  pch = 16,  
+  col = "blue"  
+)
+```
